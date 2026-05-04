@@ -3,7 +3,7 @@
 //  Ligação ao Supabase (substitui o MySQL/XAMPP)
 // ─────────────────────────────────────────────
 define('SUPABASE_URL', 'https://fmjytigqgpfocurpjvtv.supabase.co');
-define('SUPABASE_KEY', 'sb_publishable_PD-ZlUEG1KFgRI8fi3nxBA_Pcx3JNmx');
+define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtanl0aWdxZ3Bmb2N1cnBqdnR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzUzMzcwNiwiZXhwIjoyMDkzMTA5NzA2fQ.eMSp9S4hOALQCKIcDdIWmDo_ioi_TyyJFSdOhY2uAHA');
 
 /**
  * Faz um pedido REST à API do Supabase.
