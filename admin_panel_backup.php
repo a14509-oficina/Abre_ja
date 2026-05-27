@@ -147,8 +147,8 @@ $user = $_SESSION['admin_user'] ?? null;
       <div style="font-size:.75rem;color:var(--muted)"><?= htmlspecialchars($user['displayName'] ?? $user['email']) ?></div>
     </div>
     <div style="display:flex;gap:.5rem;align-items:center">
-      <button onclick="exportCSV('users')" class="btn btn-ghost btn-sm">⬇ Users</button>
-      <button onclick="exportCSV('access-log')" class="btn btn-ghost btn-sm">⬇ Log</button>
+      <a href="api/admin.php?action=export&type=users" class="btn btn-ghost btn-sm" target="_blank">⬇ Users</a>
+      <a href="api/admin.php?action=export&type=access-log" class="btn btn-ghost btn-sm" target="_blank">⬇ Log</a>
       <a href="index.php" class="btn btn-ghost btn-sm">App</a>
       <a href="admin_panel.php?logout=1" class="btn btn-danger btn-sm">Sair</a>
     </div>
@@ -202,17 +202,12 @@ $user = $_SESSION['admin_user'] ?? null;
 </div>
 
 <script>
-const IS_SUPER    = <?= $user['isSuperAdmin'] ? 'true' : 'false' ?>;
-const MY_ID       = <?= (int)$user['id'] ?>;
-const ADMIN_ID    = <?= (int)$user['id'] ?>;
-const ADMIN_EMAIL = '<?= addslashes($user['email']) ?>';
-let allUsers      = [];
+const IS_SUPER = <?= $user['isSuperAdmin'] ? 'true' : 'false' ?>;
+const MY_ID    = <?= (int)$user['id'] ?>;
+let allUsers   = [];
 
 async function api(method, url, body) {
-  const o = {method, headers:{
-    'X-Admin-Id':    ADMIN_ID.toString(),
-    'X-Admin-Email': ADMIN_EMAIL,
-  }};
+  const o = {method, headers:{}};
   if (body) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
   const r = await fetch(url, o);
   const d = await r.json().catch(() => ({}));
@@ -247,19 +242,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (n==='settings') loadSettings();
   };
 });
-
-async function exportCSV(type) {
-  try {
-    const r = await fetch(`api/admin.php?action=export&type=${type}`, {
-      headers: {'X-Admin-Id': ADMIN_ID.toString(), 'X-Admin-Email': ADMIN_EMAIL}
-    });
-    const blob = await r.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `export_${type}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-  } catch(e) { toast('Erro ao exportar', e.message, 'error'); }
-}
 
 // Stats
 async function loadStats() {

@@ -43,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'register') {
         'displayName' => $result[0]['display_name'],
         'avatar'      => $result[0]['avatar'] ?? '',
         'theme'       => $result[0]['theme'] ?? 'dark',
+        'isAdmin'      => (bool)($row['is_admin'] ?? false),
+        'isSuperAdmin' => (bool)($row['is_super_admin'] ?? false),
     ];
     setLoggedUser($userData);
     jsonResponse($userData, 201);
@@ -63,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     if (!password_verify($password, $row['password'])) {
         jsonResponse(['error' => 'Email ou password incorretos'], 401);
     }
-    if ($row['is_blocked']) {
+    $blocked = supabase('blocked_users?blocked_user_id=eq.' . $row['id'] . '&select=id');
+    if (!empty($blocked)) {
         jsonResponse(['error' => 'Conta bloqueada'], 403);
     }
 
@@ -73,6 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
         'displayName' => $row['display_name'],
         'avatar'      => $row['avatar'] ?? '',
         'theme'       => $row['theme'] ?? 'dark',
+        'isAdmin'      => (bool)($row['is_admin'] ?? false),
+        'isSuperAdmin' => (bool)($row['is_super_admin'] ?? false),
     ];
     setLoggedUser($userData);
     jsonResponse($userData);
@@ -97,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $action === 'profile') {
         'display_name' => $displayName,
         'avatar'       => $avatar,
         'theme'        => $theme,
+        'isAdmin'      => (bool)($row['is_admin'] ?? false),
+        'isSuperAdmin' => (bool)($row['is_super_admin'] ?? false),
     ]);
 
     $_SESSION['user']['displayName'] = $displayName;
