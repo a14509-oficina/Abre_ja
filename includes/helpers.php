@@ -10,3 +10,10 @@ function getBody(): array {
     $raw = file_get_contents('php://input');
     return json_decode($raw, true) ?? [];
 }
+
+function clientIp(): string {
+    return $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_X_REAL_IP']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? '';
+}

@@ -18,6 +18,14 @@ function requireAuth(): void {
     }
 }
 
+function requireAdmin(): void {
+    $user = getLoggedUser();
+    if (!$user || empty($user['isAdmin'])) {
+        http_response_code(403);
+        die(json_encode(['error' => 'Acesso negado']));
+    }
+}
+
 function setLoggedUser(array $user): void {
     startSession();
     $_SESSION['user'] = $user;
@@ -25,5 +33,10 @@ function setLoggedUser(array $user): void {
 
 function logoutUser(): void {
     startSession();
+    $_SESSION = [];
+    session_unset();
     session_destroy();
+    if (isset($_COOKIE[session_name()])) {
+        setcookie(session_name(), '', time() - 3600, '/');
+    }
 }
