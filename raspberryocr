@@ -1,0 +1,15 @@
+pip install easyocr python-dotenv opencv-python RPi.GPIO requests
+cp .env.example .env
+nano .env  # preenche os valores
+python3 ipcam.py
+
+
+///uninstall
+pip uninstall pytesseract
+sudo apt remove tesseract-ocr
+
+
+//
+pip uninstall pytesseract opencv-python
+sudo apt remove tesseract-ocr tesseract-ocr-por
+sudo apt autoremove
