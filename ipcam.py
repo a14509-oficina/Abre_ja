@@ -22,7 +22,6 @@ RELAY_TIME   = 5        # segundos que o portão fica aberto
 FRAME_SKIP   = 20       # processa 1 frame a cada 30 (≈ 1 por segundo a 30fps)
 COOLDOWN     = 20       # segundos entre leituras para evitar repetições
 # ─────────────────────────────────────────────────────────────
-1                                                                                          
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
 # Configurar GPIO
