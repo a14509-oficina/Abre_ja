@@ -14,11 +14,11 @@ startSession();
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
       --bg:hsl(220,20%,7%);--card:hsl(220,18%,11%);--secondary:hsl(220,15%,16%);
-      --border:hsl(220,15%,18%);--fg:hsl(210,20%,92%);--muted:hsl(215,15%,50%);
+      --border:hsl(220,15%,18%);--fg:hsl(210,20%,92%);--muted:hsl(215,15%,50%); 
       --primary:hsl(0,85%,55%);--destructive:hsl(0,84%,60%);
       --success:hsl(142,70%,45%);--warning:hsl(38,92%,50%);
       --radius:.75rem;--font-d:'Orbitron',monospace;--font-b:'Inter',sans-serif;
-    }
+    } 
     [data-theme="light"]{
       --bg:hsl(210,20%,96%);--card:hsl(0,0%,100%);--secondary:hsl(210,15%,90%);
       --border:hsl(210,15%,82%);--fg:hsl(220,20%,12%);--muted:hsl(215,10%,45%);

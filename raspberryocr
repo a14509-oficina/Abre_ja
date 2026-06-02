@@ -12,4 +12,4 @@ sudo apt remove tesseract-ocr
 //
 pip uninstall pytesseract opencv-python
 sudo apt remove tesseract-ocr tesseract-ocr-por
-sudo apt autoremove
+sudo apt autoremove 

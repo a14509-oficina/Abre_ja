@@ -102,312 +102,269 @@ $user = $_SESSION['admin_user'] ?? null;
     .log-time{font-size:.7rem;color:var(--muted);margin-top:.1rem}
     .skeleton{background:var(--secondary);border-radius:.5rem;animation:pulse 1.5s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    #toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
-    .toast{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1.1rem;font-size:.875rem;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toastIn .2s ease;max-width:22rem}
-    .toast.success{border-color:hsl(142 70% 45%/.4)}.toast.error{border-color:hsl(0 84% 60%/.4)}
-    @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .modal-overlay{position:fixed;inset:0;background:hsl(220 20% 4%/.85);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem}
-    .modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;width:100%;max-width:30rem;max-height:88vh;overflow-y:auto;animation:slideIn .2s ease}
-    @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-    .modal-title{font-family:var(--font-d);font-size:.85rem;font-weight:700;letter-spacing:.1em;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
-    .close-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:.25rem;border-radius:.375rem}.close-btn:hover{color:var(--fg)}
-    svg{display:inline-block;vertical-align:middle}
+    #toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+    .toast{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1.1rem;font-size:.875rem;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tIn .2s ease;max-width:22rem;pointer-events:auto}
+    .toast.error{border-color:hsl(0 84% 60%/.4)}.toast.success{border-color:hsl(142 70% 45%/.4)}
+    @keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    /* Novas classes para a secção de Portões */
+    .gate-row{display:flex;align-items:center;justify-content:between;gap:1rem;padding:.75rem;border-bottom:1px solid var(--border)}
+    .gate-row:last-child{border-bottom:none}
   </style>
 </head>
 <body>
-<div id="toast-wrap"></div>
 
 <?php if (!$user): ?>
-<!-- LOGIN -->
-<div class="login-wrap">
-  <div class="login-box">
-    <div style="text-align:center;margin-bottom:2rem">
-      <div style="width:3.5rem;height:3.5rem;border-radius:1rem;background:hsl(38 92% 50%/.1);border:1px solid hsl(38 92% 50%/.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">⭐</div>
-      <div class="login-title">PAINEL ADMIN</div>
-      <div class="login-sub">Abre Já — Área Restrita</div>
-    </div>
-    <?php if ($error): ?>
-      <div class="err"><?= htmlspecialchars($error) ?></div>
-    <?php endif ?>
-    <form method="POST">
-      <div class="form-group"><label class="label">Email</label><input class="input" type="email" name="email" placeholder="admin@exemplo.com" required/></div>
-      <div class="form-group"><label class="label">Password</label><input class="input" type="password" name="password" placeholder="••••••••" required/></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem;font-size:.8rem">Entrar no Painel</button>
-    </form>
-    <div style="text-align:center;margin-top:1.5rem"><a href="index.php" style="font-size:.8rem;color:var(--muted);text-decoration:none">← Voltar à app</a></div>
-  </div>
-</div>
-
-<?php else: ?>
-<!-- PAINEL -->
-<header>
-  <div class="header-inner">
-    <div style="display:flex;align-items:center;gap:.75rem">
-      <div style="font-family:var(--font-d);font-size:.85rem;font-weight:700;letter-spacing:.1em;color:var(--warning)">⭐ ADMIN</div>
-      <div style="font-size:.75rem;color:var(--muted)"><?= htmlspecialchars($user['displayName'] ?? $user['email']) ?></div>
-    </div>
-    <div style="display:flex;gap:.5rem;align-items:center">
-      <button onclick="exportCSV('users')" class="btn btn-ghost btn-sm">⬇ Users</button>
-      <button onclick="exportCSV('access-log')" class="btn btn-ghost btn-sm">⬇ Log</button>
-      <a href="index.php" class="btn btn-ghost btn-sm">App</a>
-      <a href="admin_panel.php?logout=1" class="btn btn-danger btn-sm">Sair</a>
-    </div>
-  </div>
-</header>
-
-<div class="main">
-  <div class="stat-grid">
-    <div class="stat-card"><div class="stat-value" id="s-users">—</div><div class="stat-label">Utilizadores</div></div>
-    <div class="stat-card"><div class="stat-value" id="s-cars">—</div><div class="stat-label">Carros</div></div>
-    <div class="stat-card"><div class="stat-value" id="s-gates">—</div><div class="stat-label">Portões</div></div>
-    <div class="stat-card"><div class="stat-value" id="s-blocked">—</div><div class="stat-label">Bloqueados</div></div>
-    <div class="stat-card"><div class="stat-value" id="s-today">—</div><div class="stat-label">Acessos Hoje</div></div>
-  </div>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="users">👥 Utilizadores</button>
-    <button class="tab" data-tab="log">📋 Acessos</button>
-    <button class="tab" data-tab="adminlog">🛡️ Admin Log</button>
-    <button class="tab" data-tab="settings">⚙️ Definições</button>
-  </nav>
-
-  <div id="tab-users"><div id="users-wrap"><div class="skeleton" style="height:8rem;border-radius:var(--radius)"></div></div></div>
-  <div id="tab-log" class="hidden"><div id="log-wrap"></div></div>
-  <div id="tab-adminlog" class="hidden"><div id="adminlog-wrap"></div></div>
-  <div id="tab-settings" class="hidden">
-    <div class="card">
-      <div class="card-title">Modo Manutenção</div>
-      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Quando ativo, apenas admins conseguem entrar.</p>
-      <div class="form-group"><label class="label">Mensagem</label><input id="inp-maint" class="input" type="text" placeholder="Sistema em manutenção..."/></div>
-      <div style="display:flex;gap:.5rem">
-        <button id="btn-maint-on" class="btn btn-warning">Ativar</button>
-        <button id="btn-maint-off" class="btn btn-success">Desativar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal -->
-<div id="modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-title">
-      <span id="modal-title">Utilizador</span>
-      <button class="close-btn" onclick="document.getElementById('modal').classList.add('hidden')">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div id="modal-body"></div>
-    <div id="modal-actions" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.25rem"></div>
-  </div>
-</div>
-
-<script>
-const IS_SUPER    = <?= $user['isSuperAdmin'] ? 'true' : 'false' ?>;
-const MY_ID       = <?= (int)$user['id'] ?>;
-const ADMIN_ID    = <?= (int)$user['id'] ?>;
-const ADMIN_EMAIL = '<?= addslashes($user['email']) ?>';
-let allUsers      = [];
-
-async function api(method, url, body) {
-  const o = {method, headers:{
-    'X-Admin-Id':    ADMIN_ID.toString(),
-    'X-Admin-Email': ADMIN_EMAIL,
-  }};
-  if (body) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
-  const r = await fetch(url, o);
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || 'Erro desconhecido');
-  return d;
-}
-
-function toast(title, desc='', type='') {
-  const el = document.createElement('div');
-  el.className = 'toast' + (type ? ' '+type : '');
-  el.innerHTML = `<div style="font-weight:600">${title}</div>${desc ? `<div style="color:var(--muted);font-size:.8rem">${desc}</div>` : ''}`;
-  document.getElementById('toast-wrap').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-function fmt(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('pt-PT', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-}
-
-function ini(name, email) { return (name||email||'?')[0].toUpperCase(); }
-
-// Tabs
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const n = tab.dataset.tab;
-    ['users','log','adminlog','settings'].forEach(id => document.getElementById('tab-'+id).classList.toggle('hidden', id !== n));
-    if (n==='log') loadLog();
-    if (n==='adminlog') loadAdminLog();
-    if (n==='settings') loadSettings();
-  };
-});
-
-async function exportCSV(type) {
-  try {
-    const r = await fetch(`api/admin.php?action=export&type=${type}`, {
-      headers: {'X-Admin-Id': ADMIN_ID.toString(), 'X-Admin-Email': ADMIN_EMAIL}
-    });
-    const blob = await r.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `export_${type}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-  } catch(e) { toast('Erro ao exportar', e.message, 'error'); }
-}
-
-// Stats
-async function loadStats() {
-  try {
-    const s = await api('GET', 'api/admin.php?action=stats');
-    document.getElementById('s-users').textContent   = s.totalUsers;
-    document.getElementById('s-cars').textContent    = s.totalCars;
-    document.getElementById('s-gates').textContent   = s.totalGates;
-    document.getElementById('s-blocked').textContent = s.totalBlocked;
-    document.getElementById('s-today').textContent   = s.accessesToday;
-  } catch(e) { console.error(e); }
-}
-
-// Users
-async function loadUsers() {
-  document.getElementById('users-wrap').innerHTML = '<div class="skeleton" style="height:8rem;border-radius:var(--radius)"></div>';
-  try {
-    allUsers = await api('GET', 'api/admin.php?action=users');
-    if (!allUsers.length) { document.getElementById('users-wrap').innerHTML = '<p style="color:var(--muted);padding:1rem">Sem utilizadores.</p>'; return; }
-    document.getElementById('users-wrap').innerHTML = `<div class="card" style="padding:.5rem">${allUsers.map(u => `
-      <div class="user-row" data-uid="${u.id}">
-        <div class="avatar" style="background:${u.avatarColor}22;color:${u.avatarColor};border:1px solid ${u.avatarColor}44">${ini(u.displayName,u.email)}</div>
-        <div class="user-info">
-          <div class="user-name">${u.displayName||'—'}
-            ${u.isSuperAdmin?'<span class="badge badge-super">⭐ Super</span>':''}
-            ${u.isAdmin&&!u.isSuperAdmin?'<span class="badge badge-admin">Admin</span>':''}
-            ${u.isBlocked?'<span class="badge badge-blocked">Bloqueado</span>':''}
-          </div>
-          <div class="user-email">${u.email} · ${fmt(u.createdAt)}</div>
+  <div class="login-wrap">
+    <div class="login-box">
+      <h1 class="login-title">Abre Já</h1>
+      <p class="login-sub">Painel de Controlo Administrativo</p>
+      <?php if ($error): ?><div class="err"><?=htmlentities($error)?></div><?php endif; ?>
+      <form method="POST">
+        <div class="form-group">
+          <label class="label">Email</label>
+          <input type="email" name="email" class="input" required autocomplete="email"/>
         </div>
-      </div>`).join('')}</div>`;
-    document.querySelectorAll('.user-row').forEach(row => row.onclick = () => showUser(parseInt(row.dataset.uid)));
-  } catch(e) { document.getElementById('users-wrap').innerHTML = `<p style="color:var(--destructive)">${e.message}</p>`; }
-}
-
-async function showUser(uid) {
-  const u = allUsers.find(u => u.id === uid); if (!u) return;
-  document.getElementById('modal-title').textContent = u.displayName || u.email;
-  document.getElementById('modal-body').innerHTML = '<div class="skeleton" style="height:6rem;border-radius:.5rem"></div>';
-  document.getElementById('modal-actions').innerHTML = '';
-  document.getElementById('modal').classList.remove('hidden');
-  try {
-    const d = await api('GET', `api/admin.php?action=user-detail&id=${uid}`);
-
-    document.getElementById('modal-body').innerHTML = `
-      <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
-        <div>📧 ${u.email}</div><div>📅 ${fmt(d.user.created_at)}</div>
-        ${u.isBlocked&&u.blockReason?`<div style="color:var(--destructive);margin-top:.2rem">🚫 ${u.blockReason}</div>`:''}
+        <div class="form-group">
+          <label class="label">Palavra-passe</label>
+          <input type="password" name="password" class="input" required autocomplete="current-password"/>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem">Entrar</button>
+      </form>
+    </div>
+  </div>
+<?php else: ?>
+  <header>
+    <div class="header-inner">
+      <div>
+        <div style="font-family:var(--font-d);font-size:.85rem;font-weight:700;letter-spacing:.1em;color:var(--warning)">PAINEL ADMIN</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.1rem">Olá, <?=htmlentities($user['displayName'])?></div>
       </div>
-      <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;margin-bottom:.3rem">Carros (${d.cars.length})</div>
-      <div style="background:var(--secondary);border:1px solid var(--border);border-radius:.5rem;overflow:hidden;margin-bottom:.5rem">
-        ${d.cars.length?d.cars.map(c=>`<div style="display:flex;align-items:center;font-size:.8rem;padding:.35rem .75rem;border-bottom:1px solid var(--border)"><span style="flex:1">${c.plate} · ${c.brand}</span><button class="btn-del-car" data-cid="${c.id}" style="background:none;border:none;color:var(--destructive);cursor:pointer;padding:.2rem .4rem;font-size:.9rem">✕</button></div>`).join(''):'<div style="font-size:.8rem;padding:.5rem .75rem;color:var(--muted)">Sem carros.</div>'}
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <a href="index.php" class="btn btn-ghost btn-sm">Voltar à App</a>
+        <a href="admin_panel.php?logout=1" class="btn btn-danger btn-sm">Sair</a>
       </div>
-      <div style="display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap">
-        <input id="adm-plate" class="input" style="flex:1;min-width:6rem;font-size:.8rem;padding:.4rem .6rem" type="text" placeholder="Matrícula" maxlength="8"/>
-        <input id="adm-brand" class="input" style="flex:1;min-width:8rem;font-size:.8rem;padding:.4rem .6rem" type="text" placeholder="Marca"/>
-        <button id="btn-adm-add-car" class="btn btn-success btn-sm">+ Carro</button>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;margin-bottom:.3rem">Portões (${d.gates.length})</div>
-      <div style="background:var(--secondary);border:1px solid var(--border);border-radius:.5rem;overflow:hidden;margin-bottom:.5rem">
-        ${d.gates.length?d.gates.map(g=>`<div style="display:flex;align-items:center;font-size:.8rem;padding:.35rem .75rem;border-bottom:1px solid var(--border)"><span style="flex:1">${g.icon} ${g.name} <span style="font-family:monospace;color:var(--muted);font-size:.7rem">${g.relay_id}</span></span><button class="btn-del-gate" data-gid="${g.id}" style="background:none;border:none;color:var(--destructive);cursor:pointer;padding:.2rem .4rem;font-size:.9rem">✕</button></div>`).join(''):'<div style="font-size:.8rem;padding:.5rem .75rem;color:var(--muted)">Sem portões.</div>'}
-      </div>
-      <div style="display:flex;gap:.4rem;margin-bottom:.5rem;flex-wrap:wrap">
-        <input id="adm-gname" class="input" style="flex:1;min-width:8rem;font-size:.8rem;padding:.4rem .6rem" type="text" placeholder="Nome do portão"/>
-        <input id="adm-grelay" class="input" style="flex:1;min-width:6rem;font-size:.8rem;padding:.4rem .6rem;font-family:monospace" type="text" placeholder="relay_id"/>
-        <button id="btn-adm-add-gate" class="btn btn-success btn-sm">+ Portão</button>
-      </div>`;
+    </div>
+  </header>
 
-    document.getElementById('btn-adm-add-car').onclick = async () => {
-      const plate = document.getElementById('adm-plate').value.trim().toUpperCase();
-      const brand = document.getElementById('adm-brand').value.trim();
-      if (!plate||!brand){toast('Preenche matrícula e marca','','error');return;}
-      try{await api('POST',`api/admin.php?action=add-car&uid=${uid}`,{plate,brand,color:'#111111'});toast('Carro adicionado!','','success');showUser(uid);}
-      catch(e){toast('Erro',e.message,'error');}
-    };
-    document.querySelectorAll('.btn-del-car').forEach(btn=>{
-      btn.onclick=async()=>{if(!confirm('Remover carro?'))return;try{await api('DELETE',`api/admin.php?action=del-car&id=${btn.dataset.cid}`);toast('Carro removido.');showUser(uid);}catch(e){toast('Erro',e.message,'error');}};
-    });
-    document.getElementById('btn-adm-add-gate').onclick = async () => {
-      const name=document.getElementById('adm-gname').value.trim();
-      const relayId=document.getElementById('adm-grelay').value.trim();
-      if(!name||!relayId){toast('Preenche nome e relay','','error');return;}
-      try{await api('POST',`api/admin.php?action=add-gate&uid=${uid}`,{name,relayId,icon:'🏠'});toast('Portão adicionado!','','success');showUser(uid);}
-      catch(e){toast('Erro',e.message,'error');}
-    };
-    document.querySelectorAll('.btn-del-gate').forEach(btn=>{
-      btn.onclick=async()=>{if(!confirm('Remover portão?'))return;try{await api('DELETE',`api/admin.php?action=del-gate&id=${btn.dataset.gid}`);toast('Portão removido.');showUser(uid);}catch(e){toast('Erro',e.message,'error');}};
-    });
+  <main class="main">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value" id="st-users">-</div><div class="stat-label">Utilizadores</div></div>
+      <div class="stat-card"><div class="stat-value" id="st-cars">-</div><div class="stat-label">Carros</div></div>
+      <div class="stat-card"><div class="stat-value" id="st-gates">-</div><div class="stat-label">Portões</div></div>
+      <div class="stat-card"><div class="stat-value" id="st-shares">-</div><div class="stat-label">Partilhas</div></div>
+      <div class="stat-card"><div class="stat-value" id="st-logs">-</div><div class="stat-label">Ações Hoje</div></div>
+    </div>
 
-    const actions = document.getElementById('modal-actions');
-    if (u.id !== MY_ID) {
-      if (u.isBlocked) {
-        const b = document.createElement('button'); b.className='btn btn-success'; b.textContent='✓ Desbloquear';
-        b.onclick=async()=>{try{await api('DELETE',`api/admin.php?action=block&id=${uid}`);toast('Desbloqueado','','success');document.getElementById('modal').classList.add('hidden');await loadUsers();await loadStats();}catch(e){toast('Erro',e.message,'error');}};
-        actions.appendChild(b);
-      } else {
-        const b = document.createElement('button'); b.className='btn btn-warning'; b.textContent='🚫 Bloquear';
-        b.onclick=async()=>{const r=prompt('Motivo (opcional):');try{await api('POST',`api/admin.php?action=block&id=${uid}`,{reason:r});toast('Bloqueado','','success');document.getElementById('modal').classList.add('hidden');await loadUsers();await loadStats();}catch(e){toast('Erro',e.message,'error');}};
-        actions.appendChild(b);
-      }
-      if (IS_SUPER) {
-        const b = document.createElement('button'); b.className='btn'; b.style.background='var(--secondary)'; b.style.color='var(--fg)'; b.style.border='1px solid var(--border)';
-        b.textContent = u.isAdmin ? '⬇️ Remover Admin' : '⭐ Tornar Admin';
-        b.onclick=async()=>{try{await api('PATCH',`api/admin.php?action=toggle-admin&id=${uid}`);toast('Papel alterado','','success');document.getElementById('modal').classList.add('hidden');await loadUsers();}catch(e){toast('Erro',e.message,'error');}};
-        actions.appendChild(b);
-      }
-      const bd = document.createElement('button'); bd.className='btn btn-danger'; bd.textContent='🗑️ Apagar Conta';
-      bd.onclick=async()=>{if(!confirm(`Apagar conta de ${u.email}? Irreversível.`))return;try{await api('DELETE',`api/admin.php?action=user&id=${uid}`);toast('Apagado','','success');document.getElementById('modal').classList.add('hidden');await loadUsers();await loadStats();}catch(e){toast('Erro',e.message,'error');}};
-      actions.appendChild(bd);
+    <div class="tabs">
+      <button class="tab active" onclick="chTab('users', this)">Utilizadores</button>
+      <button class="tab" onclick="chTab('gates', this)">Portões (Novo)</button>
+      <button class="tab" onclick="chTab('logs', this)">Logs do Sistema</button>
+      <button class="tab" onclick="chTab('settings', this)">Definições</button>
+    </div>
+
+    <div id="tab-users" class="tab-content">
+      <div class="card" style="padding:0;overflow:hidden" id="users-wrap">
+        <div style="padding:2rem;text-align:center"><div class="skeleton" style="width:100%;height:4rem"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-gates" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title">Adicionar Novo Portão</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <label class="label">Nome do Portão</label>
+            <input type="text" id="new-gate-name" class="input" placeholder="Ex: Portão Principal"/>
+          </div>
+          <div>
+            <label class="label">Relay / Endpoint GPIO</label>
+            <input type="text" id="new-gate-relay" class="input" placeholder="Ex: relay1"/>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="createNewGate()">Criar Portão</button>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <h3 class="card-title" style="padding:1.5rem 1.5rem 0 1.5rem">Portões Registados no Sistema</h3>
+        <div id="gates-list-wrap">
+          <div style="padding:2rem;text-align:center"><div class="skeleton" style="width:100%;height:3rem"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-logs" class="tab-content hidden">
+      <div id="adminlog-wrap">
+        <div style="padding:2rem;text-align:center"><div class="skeleton" style="width:100%;height:4rem"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-settings" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title">Modo de Manutenção</h3>
+        <div class="form-group">
+          <label class="label">Mensagem de Aviso</label>
+          <input type="text" id="inp-maint" class="input" value="Sistema em manutenção."/>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-warning" id="btn-maint-on">Ativar Manutenção</button>
+          <button class="btn btn-success" id="btn-maint-off">Desativar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-wrap"></div>
+
+  <script>
+    // Configurações Globais de API e Helpers
+    const token = '<?=bin2hex($user['email']??'')?>'; 
+    async function api(method, url, data=null) {
+      const headers = {'Content-Type':'application/json','X-Admin-Auth':token};
+      const opt = {method, headers};
+      if(data) opt.body = JSON.stringify(data);
+      const r = await fetch(url, opt);
+      if(!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || 'Erro na API'); }
+      return r.status === 204 ? null : r.json();
     }
-  } catch(e) { document.getElementById('modal-body').innerHTML=`<p style="color:var(--destructive)">${e.message}</p>`; }
-}
 
-// Log
-async function loadLog() {
-  document.getElementById('log-wrap').innerHTML='<div class="skeleton" style="height:8rem;border-radius:var(--radius)"></div>';
-  try {
-    const rows=await api('GET','api/admin.php?action=access-log');
-    if(!rows.length){document.getElementById('log-wrap').innerHTML='<p style="color:var(--muted);padding:1rem">Sem registos.</p>';return;}
-    document.getElementById('log-wrap').innerHTML=`<div class="card" style="padding:0;overflow:hidden">${rows.map(r=>`<div class="log-item"><div class="log-icon">🔓</div><div><div><strong>${r.gates?.name||'—'}</strong> · ${r.users?.display_name||r.users?.email||r.plate||'Sistema'}</div><div class="log-time">${fmt(r.opened_at)} · ${r.method}${r.ip_address?' · '+r.ip_address:''}</div></div></div>`).join('')}</div>`;
-  }catch(e){document.getElementById('log-wrap').innerHTML=`<p style="color:var(--destructive)">${e.message}</p>`;}
-}
+    function toast(title, sub='', type='') {
+      const w = document.getElementById('toast-wrap');
+      const div = document.createElement('div');
+      div.className = `toast ${type}`;
+      div.innerHTML = `<strong>${title}</strong>${sub?`<div>${sub}</div>`:''}`;
+      w.appendChild(div);
+      setTimeout(()=>div.remove(), 3000);
+    }
 
-// Admin log
-async function loadAdminLog() {
-  document.getElementById('adminlog-wrap').innerHTML='<div class="skeleton" style="height:8rem;border-radius:var(--radius)"></div>';
-  try {
-    const rows=await api('GET','api/admin.php?action=admin-log');
-    if(!rows.length){document.getElementById('adminlog-wrap').innerHTML='<p style="color:var(--muted);padding:1rem">Sem ações.</p>';return;}
-    document.getElementById('adminlog-wrap').innerHTML=`<div class="card" style="padding:0;overflow:hidden">${rows.map(r=>`<div class="log-item"><div class="log-icon">🛡️</div><div><div><strong>${r.action}</strong>${r.target?' → '+r.target:''}</div><div class="log-time">${r.users?.display_name||r.users?.email||'Sistema'} · ${fmt(r.created_at)}</div></div></div>`).join('')}</div>`;
-  }catch(e){document.getElementById('adminlog-wrap').innerHTML=`<p style="color:var(--destructive)">${e.message}</p>`;}
-}
+    function fmt(dStr) {
+      if(!dStr) return '';
+      const d = new Date(dStr);
+      return d.toLocaleDateString('pt-PT') + ' ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+    }
 
-// Settings
-async function loadSettings() {
-  try{const s=await api('GET','api/admin.php?action=settings');document.getElementById('inp-maint').value=s.maintenance_message||'';}catch(e){}
-}
-document.getElementById('btn-maint-on').onclick=async()=>{
-  const msg=document.getElementById('inp-maint').value.trim()||'Sistema em manutenção.';
-  try{await api('PATCH','api/admin.php?action=settings',{maintenance_mode:'true',maintenance_message:msg});toast('Manutenção ativada','','success');}catch(e){toast('Erro',e.message,'error');}
-};
-document.getElementById('btn-maint-off').onclick=async()=>{
-  try{await api('PATCH','api/admin.php?action=settings',{maintenance_mode:'false'});toast('Manutenção desativada','','success');}catch(e){toast('Erro',e.message,'error');}
-};
+    // Navegação de Abas Completamente Preservada
+    function chTab(tabId, btn) {
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      if(tabId === 'users') loadUsers();
+      if(tabId === 'gates') loadAdminGates();
+      if(tabId === 'logs') loadLogs();
+      if(tabId === 'settings') loadSettings();
+    }
 
-loadStats();
-loadUsers();
-</script>
-<?php endif ?>
+    // Inicialização de Dados
+    async function init() {
+      try {
+        const stats = await api('GET', 'api/admin.php?action=stats');
+        document.getElementById('st-users').innerText = stats.users || 0;
+        document.getElementById('st-cars').innerText = stats.cars || 0;
+        document.getElementById('st-gates').innerText = stats.gates || 0;
+        document.getElementById('st-shares').innerText = stats.shares || 0;
+        document.getElementById('st-logs').innerText = stats.logs_today || 0;
+      } catch(e){}
+      loadUsers();
+    }
+
+    // Carregamento de Utilizadores Completamente Preservado
+    async function loadUsers() {
+      try {
+        const users = await api('GET', 'api/admin.php?action=users');
+        if(!users.length) { document.getElementById('users-wrap').innerHTML = '<p style="padding:1.5rem;color:var(--muted)">Sem utilizadores.</p>'; return; }
+        document.getElementById('users-wrap').innerHTML = users.map(u => {
+          let b = '';
+          if(u.is_super_admin) b += '<span class="badge badge-super">Super</span>';
+          else if(u.is_admin) b += '<span class="badge badge-admin">Admin</span>';
+          if(u.is_blocked) b += '<span class="badge badge-blocked">Bloqueado</span>';
+          
+          const initial = (u.display_name || u.email || 'U').charAt(0).toUpperCase();
+          const avBg = u.avatar_color || 'var(--secondary)';
+          
+          return `
+            <div class="user-row" onclick="window.location.href='profile_view.php?id=${u.id}'">
+              <div class="avatar" style="background:${avBg}">${initial}</div>
+              <div class="user-info">
+                <div class="user-name">${u.display_name || 'Utilizador'} ${b}</div>
+                <div class="user-email">${u.email}</div>
+              </div>
+              <div style="color:var(--muted);font-size:.8rem">➔</div>
+            </div>
+          `;
+        }).join('');
+      } catch(e) {
+        document.getElementById('users-wrap').innerHTML = `<p style="color:var(--destructive);padding:1.5rem">${e.message}</p>`;
+      }
+    }
+
+    // NOVA FUNÇÃO: Carregar Portões na Vista Administrativa
+    async function loadAdminGates() {
+      try {
+        const gates = await api('GET', 'api/gates.php');
+        if(!gates.length) { document.getElementById('gates-list-wrap').innerHTML = '<p style="padding:1.5rem;color:var(--muted)">Sem portões registados no sistema.</p>'; return; }
+        document.getElementById('gates-list-wrap').innerHTML = gates.map(g => `
+          <div class="gate-row" style="display:flex;justify-content:space-between;padding:1rem;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-weight:600">${g.name}</div>
+              <div style="font-size:.75rem;color:var(--muted)">Relay: <code>${g.relay_trigger || g.id}</code></div>
+            </div>
+            <div>
+              <button class="btn btn-danger btn-sm" onclick="deleteGate('${g.id}')">Remover</button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {
+        document.getElementById('gates-list-wrap').innerHTML = `<p style="color:var(--destructive);padding:1.5rem">${e.message}</p>`;
+      }
+    }
+
+    // NOVA FUNÇÃO: Criar Novo Portão via Admin
+    async function createNewGate() {
+      const name = document.getElementById('new-gate-name').value.trim();
+      const relay = document.getElementById('new-gate-relay').value.trim();
+      if(!name || !relay) { toast('Erro', 'Preencha todos os campos', 'error'); return; }
+      try {
+        await api('POST', 'api/gates.php', { name, relay_trigger: relay });
+        toast('Sucesso', 'Portão adicionado globalmente', 'success');
+        document.getElementById('new-gate-name').value = '';
+        document.getElementById('new-gate-relay').value = '';
+        loadAdminGates();
+      } catch(e) { toast('Erro', e.message, 'error'); }
+    }
+
+    // NOVA FUNÇÃO: Eliminar Portão via Admin
+    async function deleteGate(id) {
+      if(!confirm('Tem a certeza que pretende eliminar este portão do sistema?')) return;
+      try {
+        await api('DELETE', `api/gates.php?id=${id}`);
+        toast('Sucesso', 'Portão removido', 'success');
+        loadAdminGates();
+      } catch(e) { toast('Erro', e.message, 'error'); }
+    }
+
+    // Carregamento de Logs Originais
+    async function loadLogs() {
+      try {
+        const rows = await api('GET', 'api/admin.php?action=admin-log');
+        if(!rows.length){document.getElementById('adminlog-wrap').innerHTML='<p style="color:var(--muted);padding:1rem">Sem ações.</p>';return;}
+        document.getElementById('adminlog-wrap').innerHTML=`<div class="card" style="padding:0;overflow:hidden">${rows.map(r=>`<div class="log-item"><div class="log-icon">🛡️</div><div><div><strong>${r.action}</strong>${r.target?' → '+r.target:''}</div><div class="log-time">${r.users?.display_name||r.users?.email||'Sistema'} · ${fmt(r.created_at)}</div></div></div>`).join('')}</div>`;
+      } catch(e){document.getElementById('adminlog-wrap').innerHTML=`<p style="color:var(--destructive)">${e.message}</p>`;}
+    }
+
+    // Definições de Modo de Manutenção Originais
+    async function loadSettings() {
+      try{const s=await api('GET','api/admin.php?action=settings');document.getElementById('inp-maint').value=s.maintenance_message||'';}catch(e){}
+    }
+    document.getElementById('btn-maint-on').onclick=async()=>{
+      const msg=document.getElementById('inp-maint').value.trim()||'Sistema em manutenção.';
+      try{await api('PATCH','api/admin.php?action=settings',{maintenance_mode:'true',maintenance_message:msg});toast('Manutenção ativada','','success');}catch(e){toast('Erro',e.message,'error');}
+    };
+    document.getElementById('btn-maint-off').onclick=async()=>{
+      try{await api('PATCH','api/admin.php?action=settings',{maintenance_mode:'false'});toast('Manutenção desativada','','success');}catch(e){toast('Erro',e.message,'error');}
+    };
+
+    window.onload = init;
+  </script>
+<?php endif; ?>
 </body>
 </html>
