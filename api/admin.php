@@ -51,6 +51,14 @@ switch ($action) {
         jsonResponse($gates);
 
     // ── Log de ações administrativas ──────────────────────────────────────────
+    case 'logs':
+        $userId = $_GET['user_id'] ?? '';
+        $filter = $userId
+            ? 'access_log?user_id=eq.' . urlencode($userId) . '&order=opened_at.desc&limit=50&select=*'
+            : 'access_log?order=opened_at.desc&limit=100&select=*';
+        $rows = supabase($filter);
+        jsonResponse($rows);
+
     case 'admin-log':
         $rows = supabase('admin_logs?select=*,users(display_name,email)&order=created_at.desc&limit=100');
         jsonResponse($rows);

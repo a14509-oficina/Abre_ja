@@ -3,73 +3,83 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
-header('Content-Type: application/json; charset=utf-8');
-requireAuth();
+session_start();
 
-$user   = getLoggedUser();
+$isAdmin = isset($_SESSION['admin_user']);
+if (!$isAdmin) requireAuth();
+
+$user   = $isAdmin ? $_SESSION['admin_user'] : getLoggedUser();
 $userId = $user['id'];
 $method = $_SERVER['REQUEST_METHOD'];
-$id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
+$id     = $_GET['id'] ?? null;
 
-// GET /api/cars.php → listar carros do utilizador
+// ── GET: listar carros ────────────────────────────────────────────────────────
 if ($method === 'GET' && !$id) {
-    $rows = supabase('cars?user_id=eq.' . $userId . '&order=created_at.asc&select=id,plate,brand,color,created_at');
-    // Renomear created_at para createdAt (compatível com o frontend)
-    $rows = array_map(function($r) {
-        $r['createdAt'] = $r['created_at'];
-        unset($r['created_at']);
-        return $r;
-    }, $rows);
-    jsonResponse($rows);
+    if ($isAdmin) {
+        $uid  = $_GET['user_id'] ?? '';
+        $cars = $uid
+            ? supabase('cars?user_id=eq.' . urlencode($uid) . '&select=*&order=created_at.desc')
+            : supabase('cars?select=*&order=created_at.desc');
+    } else {
+        $cars = supabase('cars?user_id=eq.' . $userId . '&select=*&order=created_at.desc');
+    }
+    jsonResponse($cars);
 }
 
-// POST /api/cars.php → adicionar carro
-if ($method === 'POST') {
-    $body  = getBody();
-    $plate = strtoupper(trim($body['plate'] ?? ''));
-    $brand = trim($body['brand'] ?? '');
-    $color = trim($body['color'] ?? '');
+// ── POST: criar carro ─────────────────────────────────────────────────────────
+if ($method === 'POST' && !$id) {
+    $body    = getBody();
+    $plate   = strtoupper(trim($body['plate']  ?? ''));
+    $brand   = trim($body['brand']  ?? '');
+    $model   = trim($body['model']  ?? '');
+    $color   = trim($body['color']  ?? '');
+    $ownerId = $isAdmin ? ($body['user_id'] ?? $userId) : $userId;
 
-    if (!$plate || strlen($plate) > 8) jsonResponse(['error' => 'Matrícula inválida (máx. 8 caracteres)'], 400);
-    if (!$brand)                       jsonResponse(['error' => 'Marca obrigatória'], 400);
-    if (!$color)                       jsonResponse(['error' => 'Cor obrigatória'], 400);
+    if (!$plate) jsonResponse(['error' => 'Matrícula obrigatória'], 400);
+
+    // Verificar duplicado
+    $exists = supabase('cars?plate=eq.' . urlencode($plate) . '&select=id');
+    if (!empty($exists)) jsonResponse(['error' => 'Matrícula já registada'], 400);
 
     $result = supabase('cars', 'POST', [
-        'user_id' => $userId,
+        'user_id' => $ownerId,
         'plate'   => $plate,
         'brand'   => $brand,
+        'model'   => $model,
         'color'   => $color,
     ]);
-
-    if (empty($result[0])) jsonResponse(['error' => 'Erro ao adicionar carro'], 500);
-
-    $car = $result[0];
-    $car['createdAt'] = $car['created_at'];
-    unset($car['created_at']);
-    jsonResponse($car, 201);
+    jsonResponse($result[0] ?? [], 201);
 }
 
-// PUT /api/cars.php?id=X → editar carro
+// ── PUT: editar carro ─────────────────────────────────────────────────────────
 if ($method === 'PUT' && $id) {
     $body  = getBody();
     $plate = strtoupper(trim($body['plate'] ?? ''));
     $brand = trim($body['brand'] ?? '');
+    $model = trim($body['model'] ?? '');
     $color = trim($body['color'] ?? '');
 
-    if (!$plate || strlen($plate) > 8) jsonResponse(['error' => 'Matrícula inválida (máx. 8 caracteres)'], 400);
-    if (!$brand)                       jsonResponse(['error' => 'Marca obrigatória'], 400);
+    if (!$plate) jsonResponse(['error' => 'Matrícula obrigatória'], 400);
 
-    supabase('cars?id=eq.' . $id . '&user_id=eq.' . $userId, 'PATCH', [
+    $filter = $isAdmin
+        ? 'cars?id=eq.' . urlencode($id)
+        : 'cars?id=eq.' . urlencode($id) . '&user_id=eq.' . $userId;
+
+    supabase($filter, 'PATCH', [
         'plate' => $plate,
         'brand' => $brand,
+        'model' => $model,
         'color' => $color,
     ]);
     jsonResponse(['ok' => true]);
 }
 
-// DELETE /api/cars.php?id=X → remover carro
+// ── DELETE: eliminar carro ────────────────────────────────────────────────────
 if ($method === 'DELETE' && $id) {
-    supabase('cars?id=eq.' . $id . '&user_id=eq.' . $userId, 'DELETE');
+    $filter = $isAdmin
+        ? 'cars?id=eq.' . urlencode($id)
+        : 'cars?id=eq.' . urlencode($id) . '&user_id=eq.' . $userId;
+    supabase($filter, 'DELETE');
     jsonResponse(['ok' => true]);
 }
 
