@@ -342,13 +342,31 @@ $user = $_SESSION['admin_user'] ?? null;
       } catch(e) { toast('Erro', e.message, 'error'); }
     }
 
-    // Carregamento de Logs Originais
+    // Logs de Acesso (câmara + app)
     async function loadLogs() {
       try {
-        const rows = await api('GET', 'api/admin.php?action=admin-log');
-        if(!rows.length){document.getElementById('adminlog-wrap').innerHTML='<p style="color:var(--muted);padding:1rem">Sem ações.</p>';return;}
-        document.getElementById('adminlog-wrap').innerHTML=`<div class="card" style="padding:0;overflow:hidden">${rows.map(r=>`<div class="log-item"><div class="log-icon">🛡️</div><div><div><strong>${r.action}</strong>${r.target?' → '+r.target:''}</div><div class="log-time">${r.users?.display_name||r.users?.email||'Sistema'} · ${fmt(r.created_at)}</div></div></div>`).join('')}</div>`;
-      } catch(e){document.getElementById('adminlog-wrap').innerHTML=`<p style="color:var(--destructive)">${e.message}</p>`;}
+        const rows = await api('GET', 'api/admin.php?action=logs');
+        const wrap = document.getElementById('adminlog-wrap');
+        if(!rows.length){ wrap.innerHTML='<p style="color:var(--muted);padding:1rem">Sem acessos registados.</p>'; return; }
+        wrap.innerHTML = `<div class="card" style="padding:0;overflow:hidden">` + rows.map(r => {
+          const isDenied = r.method === 'plate_denied';
+          const isApp    = r.method === 'app';
+          const icon     = isDenied ? '🚫' : (isApp ? '📱' : '📷');
+          const color    = isDenied ? 'var(--primary)' : 'var(--success)';
+          const label    = isDenied ? 'Negado' : (isApp ? 'App' : 'Câmara');
+          const plate    = r.plate ? `<span style="font-family:var(--font-d);font-size:.78rem;background:var(--secondary);padding:.15rem .45rem;border-radius:.25rem;border:1px solid var(--border)">${r.plate}</span>` : '<span style="color:var(--muted);font-size:.8rem">sem matrícula</span>';
+          return `<div class="log-item">
+            <div class="log-icon" style="background:${isDenied?'hsl(0 85% 55%/.1)':'hsl(142 70% 45%/.1)'}">${icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:.5rem">${plate} <span style="font-size:.7rem;color:${color};font-weight:600">${label}</span></div>
+              <div class="log-time">${fmt(r.opened_at)}</div>
+            </div>
+          </div>`;
+        }).join('') + `</div>`;
+        // Auto-refresh a cada 15s
+        clearTimeout(window._logTimer);
+        window._logTimer = setTimeout(loadLogs, 15000);
+      } catch(e){ document.getElementById('adminlog-wrap').innerHTML=`<p style="color:var(--destructive);padding:1rem">${e.message}</p>`; }
     }
 
     // Definições de Modo de Manutenção Originais
