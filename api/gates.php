@@ -40,12 +40,12 @@ if ($isAdmin && $method === 'POST' && !$id && !$action) {
 
     // Admin cria portão sem user_id (portão global) ou associado ao próprio admin
     $result = supabase('gates', 'POST', [
-        'name'          => $name,
-        'icon'          => $icon,
-        'relay_trigger' => $relayTrigger,
-        'relay_id'      => $relayTrigger,
-        'user_id'       => $userId,
+        'name'     => $name,
+        'icon'     => $icon,
+        'relay_id' => $relayTrigger,
+        'user_id'  => $userId,
     ]);
+    if (isset($result['code'])) jsonResponse(['error' => $result['message'] ?? 'Erro ao adicionar portão'], 500);
     jsonResponse($result[0] ?? [], 201);
 }
 
@@ -61,12 +61,12 @@ if ($isAdmin && $method === 'DELETE' && $id && !$action) {
 
 // ── GET: listar portões (próprios + partilhados) ──────────────────────────────
 if ($method === 'GET' && !$id && !$action) {
-    $own = supabase('gates?user_id=eq.' . $userId . '&order=created_at.asc&select=id,name,icon,relay_id,relay_trigger,created_at');
+    $own = supabase('gates?user_id=eq.' . $userId . '&order=created_at.asc&select=id,name,icon,relay_id,created_at');
     $own = array_map(fn($r) => array_merge(formatGate($r), ['owned' => true]), $own);
 
     $shared = supabase(
-        'gate_shares?shared_email=eq.' . urlencode($user['email']) .
-        '&select=gate_id,expires_at,gates(id,name,icon,relay_id,relay_trigger,created_at,users(display_name,email))'
+        'gate_shares?shared_email=ilike.' . urlencode($user['email']) .
+        '&select=gate_id,expires_at,gates(id,name,icon,relay_id,created_at,users(display_name,email))'
     );
     $sharedGates = [];
     foreach ($shared as $s) {
@@ -124,13 +124,12 @@ if ($method === 'POST' && !$id && !$action) {
     if (count($existing) >= 10) jsonResponse(['error' => 'Limite de 10 portões atingido'], 400);
 
     $result = supabase('gates', 'POST', [
-        'user_id'       => $userId,
-        'name'          => $name,
-        'icon'          => $icon,
-        'relay_id'      => $relayId,
-        'relay_trigger' => $relayId,
+        'user_id'  => $userId,
+        'name'     => $name,
+        'icon'     => $icon,
+        'relay_id' => $relayId,
     ]);
-    if (empty($result[0])) jsonResponse(['error' => 'Erro ao adicionar portão'], 500);
+    if (isset($result['code']) || empty($result[0])) jsonResponse(['error' => 'Erro ao adicionar portão'], 500);
     jsonResponse(array_merge(formatGate($result[0]), ['owned' => true]), 201);
 }
 
@@ -171,10 +170,10 @@ if ($method === 'POST' && $id && $action === 'share') {
     if ($email === strtolower($user['email']))
         jsonResponse(['error' => 'Não podes partilhar contigo mesmo'], 400);
 
-    $exists = supabase('gate_shares?gate_id=eq.' . $id . '&shared_email=eq.' . urlencode($email) . '&select=id');
+    $exists = supabase('gate_shares?gate_id=eq.' . $id . '&shared_email=ilike.' . urlencode($email) . '&select=id');
     if (!empty($exists)) jsonResponse(['error' => 'Já partilhado com este email'], 400);
 
-    $sharedUser   = supabase('users?email=eq.' . urlencode($email) . '&select=id');
+    $sharedUser   = supabase('users?email=ilike.' . urlencode($email) . '&select=id');
     $sharedUserId = $sharedUser[0]['id'] ?? null;
 
     $result = supabase('gate_shares', 'POST', [
@@ -250,12 +249,12 @@ if ($method === 'PUT' && $id && !$action) {
     if (!$name || strlen($name) > 60) jsonResponse(['error' => 'Nome inválido'], 400);
     if (!$relayId) jsonResponse(['error' => 'ID do relé obrigatório'], 400);
 
-    supabase('gates?id=eq.' . $id . '&user_id=eq.' . $userId, 'PATCH', [
-        'name'          => $name,
-        'icon'          => $icon,
-        'relay_id'      => $relayId,
-        'relay_trigger' => $relayId,
+    $result = supabase('gates?id=eq.' . $id . '&user_id=eq.' . $userId, 'PATCH', [
+        'name'     => $name,
+        'icon'     => $icon,
+        'relay_id' => $relayId,
     ]);
+    if (isset($result['code'])) jsonResponse(['error' => $result['message'] ?? 'Erro ao atualizar portão'], 500);
     jsonResponse(['ok' => true]);
 }
 
@@ -300,7 +299,7 @@ jsonResponse(['error' => 'Rota não encontrada'], 404);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function ownsGate($gateId, $userId): ?array {
-    $g = supabase('gates?id=eq.' . $gateId . '&user_id=eq.' . $userId . '&select=id,relay_id,relay_trigger,name,icon');
+    $g = supabase('gates?id=eq.' . $gateId . '&user_id=eq.' . $userId . '&select=id,relay_id,name,icon');
     return $g[0] ?? null;
 }
 

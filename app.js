@@ -65,7 +65,7 @@ function showAuthForm(f){
 }
 document.getElementById('btn-toggle-auth').onclick=()=>showAuthForm('register-form');
 document.getElementById('btn-toggle-login').onclick=()=>showAuthForm('login-form');
-document.getElementById('btn-show-forgot').onclick=()=>showAuthForm('forgot-form');
+document.getElementById('btn-show-forgot').onclick=()=>window.location.href='reset_password.php';
 document.getElementById('btn-back-login').onclick=()=>showAuthForm('login-form');
 
 document.getElementById('auth-submit').onclick=async()=>{
@@ -97,8 +97,10 @@ document.getElementById('forgot-submit').onclick=async()=>{
   err.classList.add('hidden'); ok.classList.add('hidden');
   const btn=document.getElementById('forgot-submit'); btn.disabled=true;
   try{
-    await api('POST','api/auth.php?action=forgot',{email});
-    ok.textContent='Se o email existir, receberás instruções em breve.'; ok.classList.remove('hidden');
+    const res = await api('POST','api/auth.php?action=forgot',{email});
+    ok.innerHTML = 'Se o email existir, receberás instruções em breve.' +
+      (res.resetUrl ? `<br/><a href="${res.resetUrl}" style="color:var(--primary);word-break:break-all">${res.resetUrl}</a>` : '');
+    ok.classList.remove('hidden');
   }catch(e){err.textContent=e.message;err.classList.remove('hidden');}
   finally{btn.disabled=false;btn.textContent='Enviar Link';}
 };
@@ -267,13 +269,20 @@ function renderCars(){
   list.innerHTML=cars.map(car=>{
     const logo=getBrandLogo(car.brand);
     const colorName=CAR_COLORS.find(c=>c.value===car.color)?.name||'Personalizada';
+    const imageSrc = car.image_url || logo;
+    const owner = currentUser?.isAdmin && car.users ? (car.users.display_name || car.users.email) : null;
+    const ownerLabel = owner ? `<div class="car-owner">${car.user_id===currentUser?.id ? 'Meu carro' : 'Proprietário: ' + owner}</div>` : '';
     return`<div class="car-card">
       <div class="car-stripe" style="background:${car.color}"></div>
       <div class="car-inner">
-        <div class="car-brand-logo">${logo?`<img src="${logo}" alt="${car.brand}" onerror="this.style.display='none'"/>`:`<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="16" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>`}</div>
+        <div class="car-brand-logo">${imageSrc?`<img src="${imageSrc}" alt="${car.brand}" onerror="this.style.display='none'"/>`:`<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="16" cy="19" r="2"/><circle cx="7" cy="19" r="2"/></svg>`}</div>
         <div class="car-info">
           <div class="car-dot" style="background:${car.color}"></div>
-          <div><div class="car-plate">${car.plate}</div><div class="car-sub">${car.brand} · ${colorName}</div></div>
+          <div>
+            <div class="car-plate">${car.plate}</div>
+            <div class="car-sub">${car.brand} · ${colorName}</div>
+            ${ownerLabel}
+          </div>
         </div>
         <div class="card-actions">
           <button class="btn btn-ghost btn-icon btn-edit-car" data-id="${car.id}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -349,13 +358,17 @@ function renderGates(){
   document.getElementById('gate-count-lbl').textContent=`${gates.length} ${gates.length===1?'portão':'portões'}`;
   if(!gates.length){list.innerHTML='';empty.classList.remove('hidden');return;}
   empty.classList.add('hidden');
-  list.innerHTML=gates.map(gate=>`
+  list.innerHTML=gates.map(gate=>{
+    const owner = gate.users ? (gate.users.display_name || gate.users.email) : null;
+    const ownerLabel = owner ? `<div class="gate-owner">${gate.user_id===currentUser?.id ? 'Meu portão' : 'Proprietário: ' + owner}</div>` : '';
+    return `
     <div class="gate-card">
       <div class="gate-inner">
         <div class="gate-icon-box">${gate.icon}</div>
         <div class="gate-info">
           <div class="gate-name">${gate.name}</div>
           <div class="gate-relay">relé: ${gate.relay_id}</div>
+          ${ownerLabel}
           ${!gate.owned?`<span class="badge badge-shared" style="margin-top:.3rem;display:inline-block">Partilhado por ${gate.sharedBy}</span>`:''}
         </div>
         <div class="gate-actions">
@@ -367,7 +380,8 @@ function renderGates(){
           `:''}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   list.querySelectorAll('.btn-open-gate').forEach(btn=>btn.onclick=()=>openGate(btn.dataset.id,btn.dataset.name,btn.dataset.icon));
   list.querySelectorAll('.btn-detail-gate').forEach(btn=>btn.onclick=()=>{const g=gates.find(g=>g.id==btn.dataset.id);if(g)openGateDetail(g);});
   list.querySelectorAll('.btn-edit-gate').forEach(btn=>btn.onclick=()=>{const g=gates.find(g=>g.id==btn.dataset.id);if(g)openGateForm(g);});

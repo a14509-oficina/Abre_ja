@@ -18,8 +18,8 @@ if ($method === 'GET' && !$id) {
     if ($isAdmin) {
         $uid  = $_GET['user_id'] ?? '';
         $cars = $uid
-            ? supabase('cars?user_id=eq.' . urlencode($uid) . '&select=*&order=created_at.desc')
-            : supabase('cars?select=*&order=created_at.desc');
+            ? supabase('cars?user_id=eq.' . urlencode($uid) . '&select=*,users(display_name,email)&order=created_at.desc')
+            : supabase('cars?select=*,users(display_name,email)&order=created_at.desc');
     } else {
         $cars = supabase('cars?user_id=eq.' . $userId . '&select=*&order=created_at.desc');
     }
@@ -31,7 +31,6 @@ if ($method === 'POST' && !$id) {
     $body    = getBody();
     $plate   = strtoupper(trim($body['plate']  ?? ''));
     $brand   = trim($body['brand']  ?? '');
-    $model   = trim($body['model']  ?? '');
     $color   = trim($body['color']  ?? '');
     $ownerId = $isAdmin ? ($body['user_id'] ?? $userId) : $userId;
 
@@ -45,9 +44,9 @@ if ($method === 'POST' && !$id) {
         'user_id' => $ownerId,
         'plate'   => $plate,
         'brand'   => $brand,
-        'model'   => $model,
         'color'   => $color,
     ]);
+    if (isset($result['code'])) jsonResponse(['error' => $result['message'] ?? 'Erro ao adicionar carro'], 500);
     jsonResponse($result[0] ?? [], 201);
 }
 
@@ -56,7 +55,6 @@ if ($method === 'PUT' && $id) {
     $body  = getBody();
     $plate = strtoupper(trim($body['plate'] ?? ''));
     $brand = trim($body['brand'] ?? '');
-    $model = trim($body['model'] ?? '');
     $color = trim($body['color'] ?? '');
 
     if (!$plate) jsonResponse(['error' => 'Matrícula obrigatória'], 400);
@@ -65,12 +63,12 @@ if ($method === 'PUT' && $id) {
         ? 'cars?id=eq.' . urlencode($id)
         : 'cars?id=eq.' . urlencode($id) . '&user_id=eq.' . $userId;
 
-    supabase($filter, 'PATCH', [
+    $result = supabase($filter, 'PATCH', [
         'plate' => $plate,
         'brand' => $brand,
-        'model' => $model,
         'color' => $color,
     ]);
+    if (isset($result['code'])) jsonResponse(['error' => $result['message'] ?? 'Erro ao atualizar carro'], 500);
     jsonResponse(['ok' => true]);
 }
 

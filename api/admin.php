@@ -63,6 +63,40 @@ switch ($action) {
         $rows = supabase('admin_logs?select=*,users(display_name,email)&order=created_at.desc&limit=100');
         jsonResponse($rows);
 
+    case 'user':
+        $id = $_GET['id'] ?? '';
+        if (!$id) jsonResponse(['error' => 'ID obrigatório'], 400);
+
+        if ($method === 'PATCH') {
+            $body = getBody();
+            $patch = [];
+            if (isset($body['is_admin'])) {
+                $patch['is_admin'] = (bool)$body['is_admin'];
+            }
+            if (isset($body['is_super_admin']) && ($_SESSION['admin_user']['isSuperAdmin'] ?? false)) {
+                $patch['is_super_admin'] = (bool)$body['is_super_admin'];
+            }
+            if (empty($patch)) jsonResponse(['error' => 'Nada para atualizar'], 400);
+
+            if ($id == ($_SESSION['admin_user']['id'] ?? '') && isset($patch['is_admin']) && !$patch['is_admin']) {
+                jsonResponse(['error' => 'Não podes remover o teu próprio admin'], 400);
+            }
+
+            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id');
+            if (empty($existing)) jsonResponse(['error' => 'Utilizador não encontrado'], 404);
+            supabase('users?id=eq.' . urlencode($id), 'PATCH', $patch);
+            jsonResponse(['ok' => true]);
+        }
+
+        if ($method === 'DELETE') {
+            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id');
+            if (empty($existing)) jsonResponse(['error' => 'Utilizador não encontrado'], 404);
+            supabase('users?id=eq.' . urlencode($id), 'DELETE');
+            jsonResponse(['ok' => true]);
+        }
+
+        jsonResponse(['error' => 'Método não suportado'], 405);
+
     // ── Definições ────────────────────────────────────────────────────────────
     case 'settings':
         if ($method === 'GET') {

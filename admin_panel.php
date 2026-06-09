@@ -11,7 +11,7 @@ $user = $_SESSION['admin_user'] ?? null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $email    = strtolower(trim($_POST['email']));
     $password = $_POST['password'] ?? '';
-    $result   = supabase('users?email=eq.' . urlencode($email) . '&select=*');
+    $result   = supabase('users?email=ilike.' . urlencode($email) . '&select=*');
     if (empty($result)) {
         $error = 'Email ou password incorretos';
     } else {
@@ -217,10 +217,11 @@ $user = $_SESSION['admin_user'] ?? null;
 
   <script>
     // Configurações Globais de API e Helpers
+    const ADMIN_ID = <?= (int)$user['id'] ?>;
     const token = '<?=bin2hex($user['email']??'')?>'; 
     async function api(method, url, data=null) {
       const headers = {'Content-Type':'application/json','X-Admin-Auth':token};
-      const opt = {method, headers};
+      const opt = {method, headers, credentials: 'include'};
       if(data) opt.body = JSON.stringify(data);
       const r = await fetch(url, opt);
       if(!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || 'Erro na API'); }
@@ -255,6 +256,9 @@ $user = $_SESSION['admin_user'] ?? null;
     }
 
     // Inicialização de Dados
+    let usersData = [];
+    let userFilter = 'all';
+
     async function init() {
       try {
         const stats = await api('GET', 'api/admin.php?action=stats');
@@ -264,11 +268,71 @@ $user = $_SESSION['admin_user'] ?? null;
         document.getElementById('st-shares').innerText = stats.shares || 0;
         document.getElementById('st-logs').innerText = stats.logs_today || 0;
       } catch(e){}
+      setFilterButtons();
       loadUsers();
+    }
+
+    function setFilterButtons() {
+      const buttons = {
+        all: document.getElementById('filter-all'),
+        admins: document.getElementById('filter-admins'),
+        users: document.getElementById('filter-users'),
+      };
+      Object.entries(buttons).forEach(([key, btn]) => {
+        btn.onclick = () => { userFilter = key; renderUsers(); };
+      });
+    }
+
+    function renderUsers() {
+      const wrap = document.getElementById('users-wrap');
+      const filtered = usersData.filter(u => {
+        if (userFilter === 'admins') return u.is_admin || u.is_super_admin;
+        if (userFilter === 'users') return !u.is_admin && !u.is_super_admin;
+        return true;
+      });
+      if (!filtered.length) {
+        wrap.innerHTML = '<div style="padding:1.5rem;color:var(--muted)">Sem utilizadores nesta vista.</div>';
+        return;
+      }
+      wrap.innerHTML = filtered.map(u => {
+        let b = '';
+        if(u.is_super_admin) b += '<span class="badge badge-super">Super</span>';
+        else if(u.is_admin) b += '<span class="badge badge-admin">Admin</span>';
+        if(u.is_blocked) b += '<span class="badge badge-blocked">Bloqueado</span>';
+
+        const initial = (u.display_name || u.email || 'U').charAt(0).toUpperCase();
+        const avBg = u.avatar_color || 'var(--secondary)';
+        const canDelete = u.id !== ADMIN_ID;
+
+        return `
+          <div class="user-row" style="justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:.75rem;flex:1;cursor:pointer" onclick="window.location.href='profile_view.php?id=${u.id}'">
+              <div class="avatar" style="background:${avBg}">${initial}</div>
+              <div class="user-info">
+                <div class="user-name">${u.display_name || 'Utilizador'} ${b}</div>
+                <div class="user-email">${u.email}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+              ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteUser(${u.id}, ${JSON.stringify(u.email)})">Eliminar</button>` : ''}
+              ${u.id !== ADMIN_ID && !u.is_super_admin ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleAdmin(${u.id}, ${u.is_admin ? 'true' : 'false'}, ${JSON.stringify(u.email)})">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Carregamento de Utilizadores Completamente Preservado
     async function loadUsers() {
+      try {
+        usersData = await api('GET', 'api/admin.php?action=users');
+        renderUsers();
+      } catch(e) {
+        document.getElementById('users-wrap').innerHTML = `<p style="color:var(--destructive);padding:1.5rem">${e.message}</p>`;
+      }
+    }
+
+    async function loadUsers_old() {
       try {
         const users = await api('GET', 'api/admin.php?action=users');
         if(!users.length) { document.getElementById('users-wrap').innerHTML = '<p style="padding:1.5rem;color:var(--muted)">Sem utilizadores.</p>'; return; }
@@ -280,20 +344,51 @@ $user = $_SESSION['admin_user'] ?? null;
           
           const initial = (u.display_name || u.email || 'U').charAt(0).toUpperCase();
           const avBg = u.avatar_color || 'var(--secondary)';
+          const canDelete = u.id !== ADMIN_ID;
           
           return `
-            <div class="user-row" onclick="window.location.href='profile_view.php?id=${u.id}'">
-              <div class="avatar" style="background:${avBg}">${initial}</div>
-              <div class="user-info">
-                <div class="user-name">${u.display_name || 'Utilizador'} ${b}</div>
-                <div class="user-email">${u.email}</div>
+            <div class="user-row" style="justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:.75rem;flex:1;cursor:pointer" onclick="window.location.href='profile_view.php?id=${u.id}'">
+                <div class="avatar" style="background:${avBg}">${initial}</div>
+                <div class="user-info">
+                  <div class="user-name">${u.display_name || 'Utilizador'} ${b}</div>
+                  <div class="user-email">${u.email}</div>
+                </div>
               </div>
-              <div style="color:var(--muted);font-size:.8rem">➔</div>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteUser(${u.id}, ${JSON.stringify(u.email)})">Eliminar</button>` : ''}
+                ${u.id !== ADMIN_ID && !u.is_super_admin ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleAdmin(${u.id}, ${u.is_admin ? 'true' : 'false'}, ${JSON.stringify(u.email)})">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</button>` : ''}
+                <div style="color:var(--muted);font-size:.8rem">➔</div>
+              </div>
             </div>
           `;
         }).join('');
       } catch(e) {
         document.getElementById('users-wrap').innerHTML = `<p style="color:var(--destructive);padding:1.5rem">${e.message}</p>`;
+      }
+    }
+
+    async function deleteUser(id, email) {
+      if (id === ADMIN_ID) { toast('Erro', 'Não podes remover a tua própria conta', 'error'); return; }
+      if (!confirm(`Tem certeza que deseja apagar o utilizador ${email}? Esta ação é irreversível.`)) return;
+      try {
+        await api('DELETE', `api/admin.php?action=user&id=${id}`);
+        toast('Utilizador apagado', '', 'success');
+        loadUsers();
+      } catch (e) {
+        toast('Erro', e.message, 'error');
+      }
+    }
+
+    async function toggleAdmin(id, isAdmin, email) {
+      const action = isAdmin ? 'remover' : 'tornar';
+      if (!confirm(`Tem certeza que deseja ${action} ${email} como admin?`)) return;
+      try {
+        await api('PATCH', `api/admin.php?action=user&id=${id}`, { is_admin: !isAdmin });
+        toast(`Sucesso`, `Utilizador ${email} ${isAdmin ? 'não é mais admin' : 'agora é admin'}.`, 'success');
+        loadUsers();
+      } catch (e) {
+        toast('Erro', e.message, 'error');
       }
     }
 
