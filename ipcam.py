@@ -261,30 +261,4 @@ def main() -> None:
                 if not matricula:
                     continue
 
-                matricula_fmt = f"{matricula[0:2]}-{matricula[2:4]}-{matricula[4:6]}"
-                log.info(f"🔎 Matrícula: {matricula_fmt}")
-
-                # Cooldown — evitar duplicados
-                if matricula_fmt == ultima_matricula and agora - ultimo_acesso < COOLDOWN:
-                    log.info("⏱️ Em cooldown, a ignorar...")
-                    continue
-
-                ultima_matricula = matricula_fmt
-                ultimo_acesso = agora
-
-                car_data = verificar_matricula(matricula_fmt)
-                if car_data:
-                    abrir_portao(matricula_fmt, car_data)
-                else:
-                    acesso_negado(matricula_fmt)
-
-            except Exception as e:
-                log.error(f"Erro no OCR: {e}")
-
-    cap.release()
-    cv2.destroyAllWindows()
-    if GPIO_DISPONIVEL:
-        GPIO.cleanup()
-
-if __name__ == "__main__":
-    main()
+                matricula_fmt = f"{matricula[0:2]}
