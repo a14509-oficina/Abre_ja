@@ -5,23 +5,21 @@ require_once __DIR__ . '/../includes/helpers.php';
 
 session_start();
 
-$isAdmin = isset($_SESSION['admin_user']);
-if (!$isAdmin) requireAuth();
+$user = getLoggedUser();
+if (!$user) requireAuth();
 
-$user   = $isAdmin ? $_SESSION['admin_user'] : getLoggedUser();
-$userId = $user['id'];
-$method = $_SERVER['REQUEST_METHOD'];
-$id     = $_GET['id'] ?? null;
+$isAdmin = !empty($user['isAdmin']);
+$userId  = $user['id'];
+$method  = $_SERVER['REQUEST_METHOD'];
+$id      = $_GET['id'] ?? null;
 
 // ── GET: listar carros ────────────────────────────────────────────────────────
 if ($method === 'GET' && !$id) {
-    if ($isAdmin) {
-        $uid  = $_GET['user_id'] ?? '';
-        $cars = $uid
-            ? supabase('cars?user_id=eq.' . urlencode($uid) . '&select=*,users(display_name,email)&order=created_at.desc')
-            : supabase('cars?select=*,users(display_name,email)&order=created_at.desc');
+    $uid = $_GET['user_id'] ?? '';
+    if ($isAdmin && $uid !== '') {
+        $cars = supabase('cars?user_id=eq.' . urlencode($uid) . '&select=*,users(display_name,email)&order=created_at.desc');
     } else {
-        $cars = supabase('cars?user_id=eq.' . $userId . '&select=*&order=created_at.desc');
+        $cars = supabase('cars?user_id=eq.' . urlencode($userId) . '&select=*&order=created_at.desc');
     }
     jsonResponse($cars);
 }

@@ -582,8 +582,26 @@ async function loadAll(){
   document.getElementById('admin-link-card').classList.toggle('hidden',!currentUser?.isAdmin);
 }
 
+function showMaintenance(message){
+  document.getElementById('page-loading').classList.add('hidden');
+  document.getElementById('auth-page').classList.add('hidden');
+  document.getElementById('app-page').classList.add('hidden');
+  document.getElementById('maintenance-page').classList.remove('hidden');
+  document.getElementById('maintenance-message').textContent = message || 'O site está em manutenção.';
+}
+
 // ════ INIT ════
 (async()=>{
+  try{
+    const settings = await api('GET','api/admin.php?action=settings');
+    if (settings.maintenance_mode === 'true') {
+      showMaintenance(settings.maintenance_message || 'O site está em manutenção.');
+      return;
+    }
+  } catch(e) {
+    // ignore settings fetch errors and continue
+  }
+
   try{
     currentUser=await api('GET','api/auth.php?action=user');
     await loadAll(); showPage('app');

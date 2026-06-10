@@ -20,6 +20,12 @@ startSession();
   <div style="font-family:var(--font-d);font-size:.7rem;letter-spacing:.15em;color:var(--muted)">ABRE JÁ</div>
 </div>
 <div id="toast-container"></div>
+<div id="maintenance-page" class="hidden">
+  <div class="maintenance-card">
+    <div class="maintenance-title">Site Indisponível</div>
+    <p id="maintenance-message" class="maintenance-text">O site está em manutenção.</p>
+  </div>
+</div>
 
 <!-- AUTH -->
 <div id="auth-page" class="hidden">

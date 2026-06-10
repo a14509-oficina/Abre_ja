@@ -56,12 +56,21 @@ $user = $_SESSION['admin_user'] ?? null;
     .hidden{display:none!important}
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.45rem 1rem;border-radius:calc(var(--radius) - 2px);font-family:var(--font-d);font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.85}
+    .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.92}
     .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--fg);background:var(--secondary)}
     .btn-success{background:hsl(142 70% 45%/.15);color:var(--success);border:1px solid hsl(142 70% 45%/.3)}
     .btn-warning{background:hsl(38 92% 50%/.15);color:var(--warning);border:1px solid hsl(38 92% 50%/.3)}
-    .btn-danger{background:hsl(0 84% 60%/.1);color:var(--destructive);border:1px solid hsl(0 84% 60%/.3)}
+    .btn-danger{background:hsl(0 84% 60%/.14);color:var(--destructive);border:1px solid hsl(0 84% 60%/.3)}
     .btn-sm{font-size:.65rem;padding:.3rem .65rem}
+    .modal-overlay{position:fixed;inset:0;background:rgba(10,14,24,.78);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:9999}
+    .modal-overlay.hidden{display:none!important}
+    .modal{width:min(34rem,100%);background:rgba(12,17,30,.98);border:1px solid rgba(255,255,255,.07);border-radius:1rem;box-shadow:0 30px 90px rgba(0,0,0,.4);padding:1.5rem;}
+    .modal-title{font-family:var(--font-d);font-size:.95rem;font-weight:700;letter-spacing:.12em;color:var(--primary);text-transform:uppercase;margin-bottom:1rem}
+    .modal p{color:var(--muted);line-height:1.7;margin-bottom:1rem}
+    .modal textarea.input{min-height:8rem;resize:vertical}
+    .modal-actions{display:flex;justify-content:flex-end;gap:.75rem;flex-wrap:wrap;margin-top:1rem}
+    .tab-content{animation:fadeIn .2s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     .input{width:100%;background:var(--secondary);border:1px solid var(--border);border-radius:calc(var(--radius) - 2px);color:var(--fg);padding:.6rem .85rem;font-size:.9rem;outline:none;transition:border-color .15s}
     .input:focus{border-color:hsl(0 85% 55%/.5)}
     .label{display:block;font-size:.7rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem}
@@ -84,11 +93,22 @@ $user = $_SESSION['admin_user'] ?? null;
     .tabs{display:flex;gap:.25rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.3rem;margin-bottom:1.5rem;flex-wrap:wrap}
     .tab{flex:1;min-width:5rem;padding:.45rem .5rem;border-radius:calc(var(--radius) - 4px);border:none;background:transparent;color:var(--muted);font-family:var(--font-d);font-size:.58rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s}
     .tab.active{background:var(--secondary);color:var(--fg)}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}
+    .card{background:rgba(8,12,20,.96);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem;box-shadow:0 30px 60px rgba(0,0,0,.18)}
     .card-title{font-family:var(--font-d);font-size:.7rem;font-weight:700;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:1.25rem}
-    .user-row{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:calc(var(--radius) - 2px);transition:background .15s;cursor:pointer}
-    .user-row:hover{background:var(--secondary)}
+    .user-row{display:flex;align-items:center;gap:.75rem;padding:.85rem;border-radius:calc(var(--radius) - 2px);transition:background .15s,transform .15s;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+    .user-row:hover{background:rgba(255,255,255,.05);transform:translateY(-1px)}
     .avatar{width:2.25rem;height:2.25rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;font-family:var(--font-d)}
+    .badge{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--fg)}
+    .badge-admin{background:hsl(0 85% 55%/.12);color:var(--primary);border-color:hsl(0 85% 55%/.25)}
+    .badge-blocked{background:hsl(0 0% 50%/.12);color:var(--muted);border-color:rgba(255,255,255,.08)}
+    .badge-super{background:hsl(38 92% 50%/.15);color:var(--warning);border-color:hsl(38 92% 50%/.3)}
+    .action-panel{margin:1rem 0 0;position:relative;transition:transform .2s ease,opacity .2s ease}
+    .action-panel.hidden{display:none}
+    .action-panel-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;box-shadow:0 30px 60px rgba(0,0,0,.12)}
+    .panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+    .panel-title{font-family:var(--font-d);font-size:.88rem;font-weight:700;letter-spacing:.1em;color:var(--primary);margin-bottom:.3rem}
+    .panel-desc{color:var(--muted);font-size:.86rem;line-height:1.6}
+    .action-panel .modal-actions{justify-content:flex-end;margin-top:1rem}
     .user-info{flex:1;min-width:0}
     .user-name{font-size:.875rem;font-weight:500}
     .user-email{font-size:.75rem;color:var(--muted)}
@@ -159,6 +179,8 @@ $user = $_SESSION['admin_user'] ?? null;
       <button class="tab active" onclick="chTab('users', this)">Utilizadores</button>
       <button class="tab" onclick="chTab('gates', this)">Portões (Novo)</button>
       <button class="tab" onclick="chTab('logs', this)">Logs do Sistema</button>
+      <button class="tab" onclick="chTab('admin-log', this)">Registos Admin</button>
+      <button class="tab" onclick="chTab('chat', this)">Chat Admin</button>
       <button class="tab" onclick="chTab('settings', this)">Definições</button>
     </div>
 
@@ -195,6 +217,32 @@ $user = $_SESSION['admin_user'] ?? null;
     <div id="tab-logs" class="tab-content hidden">
       <div id="adminlog-wrap">
         <div style="padding:2rem;text-align:center"><div class="skeleton" style="width:100%;height:4rem"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-admin-log" class="tab-content hidden">
+      <div id="admin-action-log-wrap">
+        <div style="padding:2rem;text-align:center"><div class="skeleton" style="width:100%;height:4rem"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-chat" class="tab-content hidden">
+      <div class="card" style="padding:1rem;display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem;">
+          <div>
+            <div class="card-title" style="margin-bottom:.35rem">Chat Administradores</div>
+            <div style="color:var(--muted);font-size:.88rem;line-height:1.5">Mensagens entre administradores. Esta conversa fica registada no histórico admin.</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="sendAdminChat()">Enviar</button>
+        </div>
+        <div id="admin-chat-list" style="max-height:28rem;overflow:auto;display:flex;flex-direction:column;gap:.75rem;">
+          <div class="skeleton" style="width:100%;height:4rem"></div>
+        </div>
+        <div class="form-group" style="margin-top:0">
+          <label class="label">Nova mensagem</label>
+          <textarea id="admin-chat-input" class="input" rows="4" placeholder="Escreve a tua mensagem para outros admins"></textarea>
+          <div id="admin-chat-error" class="err hidden" style="margin-top:.75rem"></div>
+        </div>
       </div>
     </div>
 
@@ -252,12 +300,13 @@ $user = $_SESSION['admin_user'] ?? null;
       if(tabId === 'users') loadUsers();
       if(tabId === 'gates') loadAdminGates();
       if(tabId === 'logs') loadLogs();
+      if(tabId === 'admin-log') loadAdminLog();
+      if(tabId === 'chat') loadAdminChat();
       if(tabId === 'settings') loadSettings();
     }
 
     // Inicialização de Dados
     let usersData = [];
-    let userFilter = 'all';
 
     async function init() {
       try {
@@ -268,28 +317,13 @@ $user = $_SESSION['admin_user'] ?? null;
         document.getElementById('st-shares').innerText = stats.shares || 0;
         document.getElementById('st-logs').innerText = stats.logs_today || 0;
       } catch(e){}
-      setFilterButtons();
       loadUsers();
     }
 
-    function setFilterButtons() {
-      const buttons = {
-        all: document.getElementById('filter-all'),
-        admins: document.getElementById('filter-admins'),
-        users: document.getElementById('filter-users'),
-      };
-      Object.entries(buttons).forEach(([key, btn]) => {
-        btn.onclick = () => { userFilter = key; renderUsers(); };
-      });
-    }
 
     function renderUsers() {
       const wrap = document.getElementById('users-wrap');
-      const filtered = usersData.filter(u => {
-        if (userFilter === 'admins') return u.is_admin || u.is_super_admin;
-        if (userFilter === 'users') return !u.is_admin && !u.is_super_admin;
-        return true;
-      });
+      const filtered = usersData;
       if (!filtered.length) {
         wrap.innerHTML = '<div style="padding:1.5rem;color:var(--muted)">Sem utilizadores nesta vista.</div>';
         return;
@@ -314,8 +348,8 @@ $user = $_SESSION['admin_user'] ?? null;
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
-              ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteUser(${u.id}, ${JSON.stringify(u.email)})">Eliminar</button>` : ''}
-              ${u.id !== ADMIN_ID && !u.is_super_admin ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleAdmin(${u.id}, ${u.is_admin ? 'true' : 'false'}, ${JSON.stringify(u.email)})">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</button>` : ''}
+              ${canDelete ? `<a class="btn btn-danger btn-sm" href="admin_action.php?action=delete&id=${u.id}&email=${encodeURIComponent(u.email)}">Eliminar</a>` : ''}
+              ${u.id !== ADMIN_ID && !u.is_super_admin ? `<a class="btn btn-ghost btn-sm" href="admin_action.php?action=toggle&mode=${u.is_admin ? 'demote' : 'promote'}&id=${u.id}&email=${encodeURIComponent(u.email)}">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</a>` : ''}
             </div>
           </div>
         `;
@@ -356,8 +390,8 @@ $user = $_SESSION['admin_user'] ?? null;
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:.5rem">
-                ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteUser(${u.id}, ${JSON.stringify(u.email)})">Eliminar</button>` : ''}
-                ${u.id !== ADMIN_ID && !u.is_super_admin ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleAdmin(${u.id}, ${u.is_admin ? 'true' : 'false'}, ${JSON.stringify(u.email)})">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</button>` : ''}
+                ${canDelete ? `<a class="btn btn-danger btn-sm" href="admin_action.php?action=delete&id=${u.id}&email=${encodeURIComponent(u.email)}">Eliminar</a>` : ''}
+                ${u.id !== ADMIN_ID && !u.is_super_admin ? `<a class="btn btn-ghost btn-sm" href="admin_action.php?action=toggle&mode=${u.is_admin ? 'demote' : 'promote'}&id=${u.id}&email=${encodeURIComponent(u.email)}">${u.is_admin ? 'Remover Admin' : 'Tornar Admin'}</a>` : ''}
                 <div style="color:var(--muted);font-size:.8rem">➔</div>
               </div>
             </div>
@@ -365,30 +399,6 @@ $user = $_SESSION['admin_user'] ?? null;
         }).join('');
       } catch(e) {
         document.getElementById('users-wrap').innerHTML = `<p style="color:var(--destructive);padding:1.5rem">${e.message}</p>`;
-      }
-    }
-
-    async function deleteUser(id, email) {
-      if (id === ADMIN_ID) { toast('Erro', 'Não podes remover a tua própria conta', 'error'); return; }
-      if (!confirm(`Tem certeza que deseja apagar o utilizador ${email}? Esta ação é irreversível.`)) return;
-      try {
-        await api('DELETE', `api/admin.php?action=user&id=${id}`);
-        toast('Utilizador apagado', '', 'success');
-        loadUsers();
-      } catch (e) {
-        toast('Erro', e.message, 'error');
-      }
-    }
-
-    async function toggleAdmin(id, isAdmin, email) {
-      const action = isAdmin ? 'remover' : 'tornar';
-      if (!confirm(`Tem certeza que deseja ${action} ${email} como admin?`)) return;
-      try {
-        await api('PATCH', `api/admin.php?action=user&id=${id}`, { is_admin: !isAdmin });
-        toast(`Sucesso`, `Utilizador ${email} ${isAdmin ? 'não é mais admin' : 'agora é admin'}.`, 'success');
-        loadUsers();
-      } catch (e) {
-        toast('Erro', e.message, 'error');
       }
     }
 
@@ -462,6 +472,34 @@ $user = $_SESSION['admin_user'] ?? null;
         clearTimeout(window._logTimer);
         window._logTimer = setTimeout(loadLogs, 15000);
       } catch(e){ document.getElementById('adminlog-wrap').innerHTML=`<p style="color:var(--destructive);padding:1rem">${e.message}</p>`; }
+    }
+
+    async function loadAdminLog() {
+      try {
+        const rows = await api('GET', 'api/admin.php?action=admin-log');
+        const wrap = document.getElementById('admin-action-log-wrap');
+        if(!rows.length){ wrap.innerHTML='<p style="color:var(--muted);padding:1rem">Sem registos administrativos.</p>'; return; }
+        wrap.innerHTML = `<div class="card" style="padding:0;overflow:hidden">` + rows.map(r => {
+          const adminName = r.users?.display_name || r.users?.email || 'Admin';
+          const action = (r.action || 'ação').replace(/_/g, ' ');
+          const isDelete = r.action === 'delete_user';
+          const labelColor = isDelete ? 'var(--primary)' : 'var(--success)';
+          const badge = isDelete ? '<strong style="color:var(--primary)">ELIMINADO</strong>' : action;
+          const details = r.details ? `<div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">${htmlEncode(r.details)}</div>` : '';
+          return `<div class="log-item" style="flex-direction:column;align-items:flex-start;gap:.35rem;padding:.9rem 1rem;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.75rem;font-size:.9rem;font-weight:600">👤 ${htmlEncode(adminName)} • ${badge}</div>
+            <div style="font-size:.82rem;color:var(--muted)">Razão: ${htmlEncode(r.reason || 'Sem motivo')}</div>
+            ${details}
+            <div class="log-time">${fmt(r.created_at || r.createdAt || '')}</div>
+          </div>`;
+        }).join('') + `</div>`;
+      } catch(e){ document.getElementById('admin-action-log-wrap').innerHTML=`<p style="color:var(--destructive);padding:1rem">${e.message}</p>`; }
+    }
+
+    function htmlEncode(value) {
+      const div = document.createElement('div');
+      div.textContent = value || '';
+      return div.innerHTML;
     }
 
     // Definições de Modo de Manutenção Originais

@@ -7,7 +7,8 @@ header('Content-Type: application/json; charset=utf-8');
 
 // ── Autenticação: aceita sessão de utilizador normal OU sessão de admin ───────
 session_start();
-$isAdmin = isset($_SESSION['admin_user']);
+// Se existir sessão normal do utilizador, prefira-a; só use sessão admin quando não houver user normal.
+$isAdmin = isset($_SESSION['admin_user']) && !isset($_SESSION['user']);
 if (!$isAdmin) {
     requireAuth();
 }

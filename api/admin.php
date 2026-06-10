@@ -4,13 +4,19 @@ require_once __DIR__ . '/../includes/helpers.php';
 
 session_start();
 
-// ── Verificar autenticação de admin ──────────────────────────────────────────
-if (!isset($_SESSION['admin_user'])) {
-    jsonResponse(['error' => 'Não autenticado'], 401);
-}
-
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
+
+// ── Ler definições de manutenção publicamente; o resto exige admin
+if ($action !== 'settings' || $method !== 'GET') {
+    if (!isset($_SESSION['admin_user'])) {
+        jsonResponse(['error' => 'Não autenticado'], 401);
+    }
+}
+
+function createAdminLog(array $data): void {
+    supabase('admin_logs', 'POST', $data);
+}
 
 switch ($action) {
 
@@ -82,16 +88,58 @@ switch ($action) {
                 jsonResponse(['error' => 'Não podes remover o teu próprio admin'], 400);
             }
 
-            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id');
+            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id,is_admin,email,display_name');
             if (empty($existing)) jsonResponse(['error' => 'Utilizador não encontrado'], 404);
+            $current = $existing[0];
             supabase('users?id=eq.' . urlencode($id), 'PATCH', $patch);
+
+            $reason = trim($body['reason'] ?? '');
+            if ($reason !== '' && isset($patch['is_admin'])) {
+                $actionType = $patch['is_admin'] ? 'promote_admin' : 'demote_admin';
+                createAdminLog([
+                    'admin_id' => $_SESSION['admin_user']['id'],
+                    'user_id'  => $id,
+                    'action'   => $actionType,
+                    'reason'   => $reason,
+                    'details'  => $current['email'] ?? $id,
+                ]);
+            }
+
             jsonResponse(['ok' => true]);
         }
 
         if ($method === 'DELETE') {
-            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id');
+            $body = getBody();
+            $reason = trim($body['reason'] ?? '');
+            $existing = supabase('users?id=eq.' . urlencode($id) . '&select=id,email,display_name');
             if (empty($existing)) jsonResponse(['error' => 'Utilizador não encontrado'], 404);
+            $target = $existing[0];
             supabase('users?id=eq.' . urlencode($id), 'DELETE');
+
+            createAdminLog([
+                'admin_id' => $_SESSION['admin_user']['id'],
+                'user_id'  => $id,
+                'action'   => 'delete_user',
+                'reason'   => $reason,
+                'details'  => $target['email'] ?? $id,
+            ]);
+
+            if (!empty($body['close_site']) && $body['close_site']) {
+                $message = $reason ?: 'Conta eliminada. Site indisponível.';
+                $existingSetting = supabase('settings?key=eq.maintenance_mode&select=key');
+                if (!empty($existingSetting)) {
+                    supabase('settings?key=eq.maintenance_mode', 'PATCH', ['value' => 'true']);
+                } else {
+                    supabase('settings', 'POST', ['key' => 'maintenance_mode', 'value' => 'true']);
+                }
+                $existingMessage = supabase('settings?key=eq.maintenance_message&select=key');
+                if (!empty($existingMessage)) {
+                    supabase('settings?key=eq.maintenance_message', 'PATCH', ['value' => $message]);
+                } else {
+                    supabase('settings', 'POST', ['key' => 'maintenance_message', 'value' => $message]);
+                }
+            }
+
             jsonResponse(['ok' => true]);
         }
 
